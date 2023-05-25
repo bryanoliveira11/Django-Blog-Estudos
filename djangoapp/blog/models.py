@@ -64,7 +64,14 @@ class Category(models.Model):
         return self.name
 
 
+class PostManager(models.Manager):
+    def get_published(self):
+        return self.filter(is_published=True).order_by('-pk')
+
+
 class Page(models.Model):
+    objects = PostManager()
+
     title = models.CharField(max_length=65)
     slug = models.SlugField(
         unique=True, default=None,
@@ -76,6 +83,11 @@ class Page(models.Model):
         )
     content = models.TextField()
 
+    def get_absolute_url(self):
+        if not self.is_published:
+            return reverse('blog:index')
+        return reverse('blog:page', args=(self.slug,))
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify_new(self.title, 5)
@@ -83,11 +95,6 @@ class Page(models.Model):
 
     def __str__(self):
         return self.title
-
-
-class PostManager(models.Manager):
-    def get_published(self):
-        return self.filter(is_published=True).order_by('-pk')
 
 
 class Post(models.Model):
